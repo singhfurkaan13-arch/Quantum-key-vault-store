@@ -1,0 +1,9 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyA9voINhFQLDMnZ0TNvlpVfMbiSo48pLr8",
+  authDomain: "quantuam-e3a66.firebaseapp.com",
+  databaseURL: "https://quantuam-e3a66-default-rtdb.firebaseio.com",
+  projectId: "quantuam-e3a66",
+  storageBucket: "quantuam-e3a66.firebasestorage.app",
+  messagingSenderId: "725211414564",
+  appId: "1:725211414564:web:quantuam-web-app"
+};

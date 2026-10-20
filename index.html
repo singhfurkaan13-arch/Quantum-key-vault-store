@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>QUANTUM STORE | NEXT-GEN CYBER DEPLOYMENT v7.0</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<!-- FontAwesome 6 Pro -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
+<!-- Canvas Confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+<style>
+    :root {
+        --bg-void: #020408;
+        --bg-card: rgba(14, 21, 38, 0.88);
+        --bg-input: #080d1a;
+        --border-subtle: rgba(255, 255, 255, 0.08);
+        --border-glass: rgba(100, 150, 255, 0.22);
+        --primary: #00e5ff;
+        --primary-glow: rgba(0, 229, 255, 0.4);
+        --accent: #7928ca;
+        --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 35%, #7928ca 100%);
+        --green: #10b981;
+        --red: #ef4444;
+        --gold: #fbbf24;
+        --text-pure: #ffffff;
+        --text-sub: #94a3b8;
+        --radius-sm: 8px;
+        --radius-md: 14px;
+        --radius-lg: 22px;
+        --radius-pill: 9999px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+        background-color: var(--bg-void);
+        color: var(--text-pure);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    #matrix-canvas-user {
+        position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.16;
+    }
+    .cyber-grid {
+        position: fixed; inset: 0; background-size: 38px 38px;
+        background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        pointer-events: none; z-index: 1;
+    }
+    .hidden { display: none !important; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* MAINTENANCE LOCK SCREEN */
+    #maintenance-screen {
+        position: fixed; inset: 0; background: rgba(3, 6, 12, 0.98);
+        backdrop-filter: blur(25px); z-index: 9999999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 24px; text-align: center;
+    }
+    .maint-ring {
+        width: 80px; height: 80px; border-radius: 50%;
+        background: rgba(251, 191, 36, 0.1); border: 2px solid var(--gold);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 36px; color: var(--gold); margin-bottom: 20px;
+        animation: pulseMaint 2s infinite;
+    }
+    @keyframes pulseMaint { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); box-shadow: 0 0 35px var(--gold); } }
+
+    /* REALTIME TICKER & POPUP */
+    .quantum-ticker-bar {
+        position: fixed; bottom: 0; left: 0; right: 0; height: 40px;
+        background: rgba(8, 13, 25, 0.96); border-top: 1px solid rgba(0, 229, 255, 0.35);
+        display: flex; align-items: center; padding: 0 18px; z-index: 999; font-size: 12.5px; font-weight: 700;
+        overflow: hidden;
+    }
+    .ticker-track {
+        display: flex; gap: 40px; white-space: nowrap; animation: marquee 22s linear infinite;
+    }
+    @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+    .live-purchase-toast {
+        position: fixed; top: 86px; left: 24px; z-index: 10000;
+        background: rgba(14, 21, 38, 0.96); border: 1.5px solid var(--primary);
+        border-radius: var(--radius-md); padding: 14px 20px; display: flex; align-items: center; gap: 14px;
+        box-shadow: 0 10px 40px rgba(0, 229, 255, 0.35); animation: popupLive 0.5s forwards;
+    }
+    @keyframes popupLive { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Navbar */
+    .navbar {
+        position: fixed; top: 0; left: 0; right: 0; height: 72px;
+        background: rgba(7, 11, 20, 0.88); backdrop-filter: blur(22px);
+        border-bottom: 1px solid var(--border-subtle); display: flex;
+        align-items: center; justify-content: space-between; padding: 0 20px; z-index: 1000;
+    }
+    .brand-title { font-size: 19px; font-weight: 900; white-space: nowrap; }
+    
+    .nav-links-wrap {
+        display: flex; gap: 14px; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .nav-link {
+        color: var(--text-sub); text-decoration: none; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; transition: all 0.2s;
+    }
+    .nav-link:hover, .nav-link.active {
+        color: var(--primary); background: rgba(0, 229, 255, 0.08);
+    }
+    .wallet-chip {
+        background: rgba(0, 229, 255, 0.08); padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(0, 229, 255, 0.3); white-space: nowrap; display: flex; align-items: center; gap: 6px; cursor: pointer;
+    }
+
+    .app-viewport { padding: 94px 20px 80px; max-width: 1280px; margin: 0 auto; position: relative; z-index: 2; }
+
+    .grid-panels { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 24px; }
+    
+    .product-card {
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s;
+    }
+    .product-card:hover { transform: translateY(-4px); border-color: var(--border-glass); }
+
+    .card-video-wrap {
+        width: 100%; position: relative; padding-bottom: 56.25%; background: #000; overflow: hidden;
+    }
+    .card-video-wrap iframe {
+        position: absolute; inset: 0; width: 100%; height: 100%; border: none;
+    }
+    .card-video-fallback {
+        position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #0e1525, #080d19); color: var(--text-sub); gap: 8px;
+    }
+
+    .card-body-content {
+        padding: 20px; display: flex; flex-direction: column; gap: 14px; flex: 1;
+    }
+
+    .btn-cyber-primary {
+        padding: 13px; border-radius: var(--radius-md); background: var(--accent-gradient);
+        border: none; color: #fff; font-weight: 800; cursor: pointer; text-align: center;
+        transition: filter 0.2s;
+    }
+    .btn-cyber-primary:hover { filter: brightness(1.15); }
+
+    .badge-stock {
+        padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; width: fit-content;
+    }
+    .badge-in-stock { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid var(--green); }
+    .badge-out-stock { background: rgba(244, 63, 94, 0.15); color: var(--red); border: 1px solid var(--red); }
+
+    .custom-select {
+        width: 100%; padding: 11px 14px; background: var(--bg-input); border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm); color: #fff; font-size: 13px; font-weight: 700; outline: none;
+    }
+
+    /* Modals */
+    .nexus-modal-backdrop {
+        position: fixed; inset: 0; background: rgba(2, 4, 8, 0.92);
+        display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 9999;
+    }
+    .checkout-engine-card {
+        width: 100%; max-width: 500px; background: #0d1527;
+        border: 1px solid var(--border-glass); border-radius: var(--radius-lg);
+        padding: 24px; text-align: center; max-height: 90vh; overflow-y: auto;
+    }
+    .form-input {
+        width: 100%; padding: 12px 16px; background: var(--bg-input); border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm); color: #fff; font-size: 14px; margin: 10px 0; outline: none;
+    }
+    .qr-box { width: 190px; height: 190px; margin: 14px auto; background: #fff; padding: 8px; border-radius: 12px; }
+    .qr-box img { width: 100%; height: 100%; object-fit: contain; }
+
+    /* Animated Leaderboard Podium */
+    .podium-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .podium-card {
+        background: var(--bg-card); border: 1.5px solid var(--border-subtle); border-radius: var(--radius-md);
+        padding: 24px 14px; text-align: center; position: relative; overflow: hidden;
+        animation: floatPodium 4s ease-in-out infinite alternate;
+    }
+    .podium-card.rank-1 { border-color: var(--gold); box-shadow: 0 0 35px rgba(251, 191, 36, 0.3); animation-delay: 0s; }
+    .podium-card.rank-2 { border-color: #cbd5e1; animation-delay: -1.3s; }
+    .podium-card.rank-3 { border-color: #f97316; animation-delay: -2.6s; }
+    @keyframes floatPodium {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-8px); }
+    }
+
+    .user-rank-row {
+        display: flex; align-items: center; justify-content: space-between; padding: 16px 20px;
+        background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+        margin-bottom: 10px; transition: transform 0.2s;
+    }
+    .user-rank-row:hover { transform: translateX(4px); border-color: var(--border-glass); }
+
+    /* Profile Avatar (DP) Upload */
+    .profile-avatar-box {
+        width: 90px; height: 90px; border-radius: 50%; border: 2px solid var(--primary);
+        background: var(--bg-input); margin: 0 auto 14px; position: relative; overflow: hidden;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        box-shadow: 0 0 25px var(--primary-glow);
+    }
+    .profile-avatar-box img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-avatar-box i { font-size: 32px; color: var(--primary); }
+    .profile-avatar-box .overlay-edit {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+        opacity: 0; transition: opacity 0.2s; color: #fff; font-size: 14px; font-weight: 700;
+    }
+    .profile-avatar-box:hover .overlay-edit { opacity: 1; }
+
+    .purchase-card {
+        background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+        padding: 16px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+        .navbar { flex-wrap: wrap; height: auto; padding: 12px 16px; gap: 10px; }
+        .nav-links-wrap { width: 100%; justify-content: space-between; }
+        .grid-panels { grid-template-columns: 1fr; }
+        .podium-grid { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas-user"></canvas>
+<div class="cyber-grid"></div>
+
+<!-- LIVE BROADCAST NOTIFIER -->
+<div id="live-purchase-popup" class="hidden"></div>
+
+<!-- MAINTENANCE LOCK SCREEN -->
+<div id="maintenance-screen" class="hidden">
+    <div class="maint-ring"><i class="fas fa-wrench"></i></div>
+    <h2 style="font-size:28px;font-weight:900;">SYSTEM UNDER MAINTENANCE</h2>
+    <p id="maint-notice-text" style="color:var(--text-sub);font-size:15px;margin:12px 0 24px;max-width:500px;">
+        Store upgrades in progress. We will be back online shortly!
+    </p>
+    <div style="font-size:12px;color:var(--gold);font-weight:700;">QUANTUM CORE PROTOCOL</div>
+</div>
+
+<nav class="navbar">
+    <div class="brand-title">QUANTUM <span style="color:var(--primary);">STORE</span></div>
+    <div class="nav-links-wrap">
+        <span class="nav-link active" id="tab-btn-store" onclick="switchTab('store')"><i class="fas fa-boxes"></i> Store</span>
+        <span class="nav-link" id="tab-btn-leaderboard" onclick="switchTab('leaderboard')"><i class="fas fa-trophy"></i> Ranks</span>
+        <span class="nav-link" id="tab-btn-purchases" onclick="switchTab('purchases')"><i class="fas fa-key"></i> Keys</span>
+        <span class="nav-link" id="tab-btn-profile" onclick="switchTab('profile')"><i class="fas fa-user-gear"></i> Account</span>
+        <div class="wallet-chip" onclick="openDepositModal()" title="Deposit Funds">
+            <span style="font-size:11px;color:var(--text-sub);">Bal:</span>
+            <strong style="color:var(--green);font-size:14px;" id="user-bal-display">₹0.00</strong>
+            <i class="fas fa-plus-circle" style="color:var(--primary);font-size:12px;"></i>
+        </div>
+    </div>
+</nav>
+
+<div class="app-viewport">
+    <!-- STORE SECTION -->
+    <div id="view-store">
+        <h1 style="font-size:26px;font-weight:900;margin-bottom:8px;">Quantum Store Inventory</h1>
+        <p style="color:var(--text-sub);font-size:14px;margin-bottom:24px;">Watch showcase video, select duration tier, and buy instantly with wallet balance.</p>
+        <div class="grid-panels" id="panels-list-render"></div>
+    </div>
+
+    <!-- LEADERBOARD SECTION -->
+    <div id="view-leaderboard" class="hidden">
+        <div style="text-align:center;margin-bottom:30px;">
+            <h2 style="font-size:26px;font-weight:900;">Top Purchasers Leaderboard</h2>
+            <p style="color:var(--text-sub);font-size:14px;margin-top:4px;">Elite operatives with highest store acquisitions</p>
+        </div>
+        <div class="podium-grid" id="user-podium-render"></div>
+        <div id="user-leaderboard-list"></div>
+    </div>
+
+    <!-- MY PURCHASES & DOWNLOAD APK SECTION -->
+    <div id="view-purchases" class="hidden">
+        <h1 style="font-size:26px;font-weight:900;margin-bottom:8px;">My Purchased Tools &amp; Keys</h1>
+        <p style="color:var(--text-sub);font-size:14px;margin-bottom:24px;">Instant download APKs and copy your activated license keys anytime.</p>
+        <div id="user-purchases-container"></div>
+    </div>
+
+    <!-- ACCOUNT PROFILE & DP UPLOAD SECTION -->
+    <div id="view-profile" class="hidden">
+        <div class="checkout-engine-card" style="max-width:540px;margin:0 auto;text-align:center;">
+            <h2 style="font-size:22px;font-weight:900;margin-bottom:14px;">User Account &amp; Profile DP</h2>
+            
+            <!-- DP Avatar Upload -->
+            <input type="file" id="dp-file-input" accept="image/*" style="display:none;" />
+            <div class="profile-avatar-box" onclick="document.getElementById('dp-file-input').click()" title="Click to upload profile picture">
+                <img id="user-dp-img" src="" class="hidden" alt="DP" />
+                <i class="fas fa-user" id="user-dp-icon"></i>
+                <div class="overlay-edit"><i class="fas fa-camera"></i> Change DP</div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <span style="font-size:12px;color:var(--text-sub);">Signed in as:</span>
+                <div style="font-weight:800;font-size:15px;" id="prof-email-display">-</div>
+            </div>
+
+            <div style="border-top:1px solid var(--border-subtle);padding-top:16px;margin-top:16px;text-align:left;">
+                <h3 style="font-size:16px;font-weight:800;margin-bottom:10px;"><i class="fas fa-lock"></i> Change Password</h3>
+                <div class="form-group">
+                    <label style="font-size:12px;color:var(--text-sub);">New Password (min 6 characters)</label>
+                    <input type="password" id="new-password-input" class="form-input" placeholder="Enter new password" />
+                </div>
+                <button class="btn-cyber-primary" id="btn-change-password" style="width:100%;margin-top:4px;">
+                    Update Password
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BOTTOM TICKER -->
+<div class="quantum-ticker-bar">
+    <div style="color:var(--primary);margin-right:14px;white-space:nowrap;"><i class="fas fa-bolt"></i> LIVE STREAM:</div>
+    <div class="ticker-track" id="ticker-track-content">
+        <span>⚡ Welcome to Quantum Store Core</span>
+        <span>🔥 Jhony purchased Silent Cheats (₹100)!</span>
+        <span>👑 Automated Wallet &amp; Key Delivery Online</span>
+    </div>
+</div>
+
+<!-- DEPOSIT MODAL WITH UTR & SCREENSHOT PROOF -->
+<div class="nexus-modal-backdrop hidden" id="modal-deposit">
+    <div class="checkout-engine-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="font-size:18px;font-weight:800;">Deposit Funds to Wallet</h3>
+            <button onclick="document.getElementById('modal-deposit').classList.add('hidden')" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;"><i class="fas fa-xmark"></i></button>
+        </div>
+
+        <div style="text-align:left;">
+            <label style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;">1. Enter Amount to Deposit (₹)</label>
+            <input type="number" id="dep-amount-input" class="form-input" placeholder="e.g. 500" value="100" oninput="updateDepositQR()" />
+        </div>
+
+        <div class="qr-box">
+            <img id="dep-qr-img" src="" alt="QR">
+        </div>
+        <div style="font-size:12px;color:var(--text-sub);margin-bottom:12px;">
+            Payee UPI VPA: <strong class="mono" id="dep-vpa-display" style="color:var(--primary);">-</strong>
+        </div>
+
+        <div style="text-align:left;">
+            <label style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;">2. Enter 12-Digit UTR / Ref No.</label>
+            <input type="text" id="dep-utr-input" class="form-input mono" placeholder="e.g. 4235XXXXXXXX" />
+        </div>
+
+        <div style="text-align:left;">
+            <label style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;">3. Upload Payment Screenshot Proof</label>
+            <input type="file" id="dep-screenshot-file" accept="image/*" style="display:none;" />
+            <button class="btn-cyber-primary" type="button" onclick="document.getElementById('dep-screenshot-file').click()" style="width:100%;background:rgba(255,255,255,0.06);border:1px dashed var(--border-glass);margin-top:4px;">
+                <i class="fas fa-camera"></i> <span id="dep-file-label">Choose Screenshot Image</span>
+            </button>
+        </div>
+
+        <button class="btn-cyber-primary" id="btn-submit-deposit" style="width:100%;margin-top:16px;">
+            <i class="fas fa-paper-plane"></i> Submit Deposit Request
+        </button>
+    </div>
+</div>
+
+<!-- SUCCESS KEY & DOWNLOAD FILE/APK MODAL -->
+<div class="nexus-modal-backdrop hidden" id="modal-key-success">
+    <div class="checkout-engine-card">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(16,185,129,0.15);color:var(--green);font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <i class="fas fa-check"></i>
+        </div>
+        <h3 style="font-size:22px;font-weight:900;">Purchase Successful!</h3>
+        <p style="color:var(--text-sub);font-size:14px;margin:6px 0 16px;">Your tool license key is ready:</p>
+        <div class="mono" id="disp-issued-key" style="background:#000;padding:14px;border-radius:10px;border:1px dashed var(--primary);color:var(--green);font-size:18px;font-weight:800;letter-spacing:1px;margin-bottom:16px;">
+            KEY-XXXX
+        </div>
+        <div style="display:flex;gap:10px;">
+            <button class="btn-cyber-primary" id="btn-copy-key-modal" style="flex:1;"><i class="fas fa-copy"></i> Copy Key</button>
+            <a id="btn-download-apk-modal" href="#" target="_blank" class="btn-cyber-primary" style="flex:1;text-decoration:none;"><i class="fas fa-download"></i> Download APK</a>
+        </div>
+        <button class="btn-cyber-primary" onclick="document.getElementById('modal-key-success').classList.add('hidden')" style="width:100%;margin-top:12px;background:transparent;border:1px solid var(--border-subtle);">
+            Close
+        </button>
+    </div>
+</div>
+
+<!-- CONFIRMATION POPUP -->
+<div class="nexus-modal-backdrop hidden" id="modal-request-sent">
+    <div class="checkout-engine-card">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(16,185,129,0.15);color:var(--green);font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <i class="fas fa-check"></i>
+        </div>
+        <h3 style="font-size:20px;font-weight:900;">Your request is sent to admin!</h3>
+        <p style="color:var(--text-sub);font-size:14px;margin:10px 0 20px;line-height:1.6;">
+            Your deposit request with UTR and screenshot has been submitted. Admin will approve your request soon and wallet balance will be credited!
+        </p>
+        <button class="btn-cyber-primary" onclick="document.getElementById('modal-request-sent').classList.add('hidden')" style="width:100%;">
+            OK, Understood
+        </button>
+    </div>
+</div>
+
+<script>
+    // Cyber Audio Synthesizer
+    const userAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playClick(freq = 800, dur = 0.05) {
+      try {
+        if (userAudioCtx.state === 'suspended') userAudioCtx.resume();
+        const osc = userAudioCtx.createOscillator();
+        const gain = userAudioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, userAudioCtx.currentTime);
+        gain.gain.setValueAtTime(0.06, userAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, userAudioCtx.currentTime + dur);
+        osc.connect(gain);
+        gain.connect(userAudioCtx.destination);
+        osc.start();
+        osc.stop(userAudioCtx.currentTime + dur);
+      } catch(e) {}
+    }
+    document.addEventListener('click', e => {
+      if (e.target.closest('button') || e.target.closest('.nav-link') || e.target.closest('.wallet-chip')) playClick(950, 0.05);
+    });
+
+    // Matrix Digital Rain
+    const uCanvas = document.getElementById('matrix-canvas-user');
+    const uCtx = uCanvas.getContext('2d');
+    function resizeUCanvas() { uCanvas.width = window.innerWidth; uCanvas.height = window.innerHeight; }
+    resizeUCanvas();
+    window.addEventListener('resize', resizeUCanvas);
+    const uChars = '0123456789QUANTUM';
+    const uFontSize = 14;
+    let uColumns = Math.floor(uCanvas.width / uFontSize);
+    let uDrops = Array(uColumns).fill(1);
+    function drawUMatrix() {
+      uCtx.fillStyle = 'rgba(2, 4, 8, 0.08)';
+      uCtx.fillRect(0, 0, uCanvas.width, uCanvas.height);
+      uCtx.fillStyle = '#00e5ff';
+      uCtx.font = uFontSize + 'px monospace';
+      for (let i = 0; i < uDrops.length; i++) {
+        const text = uChars.charAt(Math.floor(Math.random() * uChars.length));
+        uCtx.fillText(text, i * fontSize, uDrops[i] * fontSize);
+        if (uDrops[i] * fontSize > uCanvas.height && Math.random() > 0.975) uDrops[i] = 0;
+        uDrops[i]++;
+      }
+    }
+    setInterval(drawUMatrix, 50);
+</script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, set, get, onValue, push, runTransaction, serverTimestamp, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA9voINhFQLDMnZ0TNvlpVfMbiSo48pLr8",
+      authDomain: "quantuam-e3a66.firebaseapp.com",
+      databaseURL: "https://quantuam-e3a66-default-rtdb.firebaseio.com",
+      projectId: "quantuam-e3a66",
+      storageBucket: "quantuam-e3a66.firebasestorage.app",
+      messagingSenderId: "725211414564",
+      appId: "1:725211414564:web:quantuam-web-app"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    function extractYouTubeID(url) {
+        if (!url) return null;
+        url = url.trim();
+        if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+        const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/;
+        const match = url.match(regExp);
+        return match ? match[1] : null;
+    }
+
+    let currentUser = null;
+    let userBalance = 0;
+    let paymentConfig = { upi_id: 'malikmanaan068@okaxis', merchant_name: 'QUANTUM STORE', qr_url: '', qr_mode: 'dynamic' };
+    let uploadedScreenshotBase64 = '';
+    let currentStorePanels = {};
+
+    onValue(ref(db, 'settings/maintenance'), snap => {
+        const val = snap.val() || { enabled: false };
+        const screen = document.getElementById('maintenance-screen');
+        if (val.enabled === true) {
+            screen.classList.remove('hidden');
+            if (val.notice) document.getElementById('maint-notice-text').innerText = val.notice;
+        } else {
+            screen.classList.add('hidden');
+        }
+    });
+
+    onValue(ref(db, 'settings/payment'), snap => {
+        if (snap.exists()) {
+            paymentConfig = { ...paymentConfig, ...snap.val() };
+            updateDepositQR();
+        }
+    });
+
+    let firstFeedLoad = true;
+    onValue(ref(db, 'global_feed'), snap => {
+        if (!snap.exists()) return;
+        const feed = snap.val();
+        if (!firstFeedLoad && feed.user && feed.panel) {
+            triggerLivePurchaseNotification(feed.user, feed.panel, feed.amount || 0);
+        }
+        const ticker = document.getElementById('ticker-track-content');
+        if (ticker && feed.user) {
+            ticker.innerHTML = `
+                <span>🔥 LIVE: <strong>${feed.user}</strong> purchased <strong>${feed.panel}</strong> (₹${feed.amount})!</span>
+                <span>⚡ Key delivered autonomously from Quantum stock</span>
+                <span>👑 Wallet balances verified</span>
+            `;
+        }
+        firstFeedLoad = false;
+    });
+
+    function triggerLivePurchaseNotification(user, panel, amount) {
+        const popup = document.getElementById('live-purchase-popup');
+        popup.className = 'live-purchase-toast';
+        popup.innerHTML = `
+            <i class="fas fa-cart-shopping" style="color:var(--primary);font-size:20px;"></i>
+            <div>
+                <div style="font-size:11px;font-weight:800;color:var(--primary);">LIVE STORE ACQUISITION</div>
+                <div style="font-size:13.5px;font-weight:800;">${user} purchased ${panel}!</div>
+            </div>
+        `;
+        popup.classList.remove('hidden');
+        setTimeout(() => popup.classList.add('hidden'), 4500);
+    }
+
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('prof-email-display').innerText = user.email || 'Anonymous Operative';
+            
+            onValue(ref(db, `users/${user.uid}/balance`), s => {
+                userBalance = parseFloat(s.val() || 0);
+                document.getElementById('user-bal-display').innerText = `₹${userBalance.toFixed(2)}`;
+            });
+
+            onValue(ref(db, `users/${user.uid}/avatar`), s => {
+                const dp = s.val();
+                const img = document.getElementById('user-dp-img');
+                const icon = document.getElementById('user-dp-icon');
+                if (dp) {
+                    img.src = dp;
+                    img.classList.remove('hidden');
+                    icon.classList.add('hidden');
+                }
+            });
+
+            loadUserPurchases();
+        } else {
+            signInAnonymously(auth).catch(() => {});
+        }
+    });
+
+    // Handle DP File Upload
+    document.getElementById('dp-file-input').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        const base64 = evt.target.result;
+        await update(ref(db, `users/${currentUser.uid}`), { avatar: base64 });
+        document.getElementById('user-dp-img').src = base64;
+        document.getElementById('user-dp-img').classList.remove('hidden');
+        document.getElementById('user-dp-icon').classList.add('hidden');
+        alert("Profile Picture (DP) Updated Successfully!");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    window.switchTab = (tab) => {
+        ['store', 'leaderboard', 'purchases', 'profile'].forEach(t => {
+            document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
+            const btn = document.getElementById(`tab-btn-${t}`);
+            if (btn) btn.classList.toggle('active', t === tab);
+        });
+        if (tab === 'leaderboard') renderLeaderboard();
+        if (tab === 'purchases') loadUserPurchases();
+    };
+
+    onValue(ref(db, 'panels'), async (snap) => {
+        const container = document.getElementById('panels-list-render');
+        container.innerHTML = '';
+        currentStorePanels = {};
+        if (!snap.exists()) {
+            container.innerHTML = '<p style="color:var(--text-sub);">No panels deployed.</p>';
+            return;
+        }
+
+        const stocksSnap = await get(ref(db, 'key_stocks'));
+        const allStocks = stocksSnap.val() || {};
+
+        snap.forEach(c => {
+            const p = c.val();
+            const id = c.key;
+            currentStorePanels[id] = p;
+
+            const ytId = extractYouTubeID(p.youtube);
+            const videoHtml = ytId 
+                ? `<div class="card-video-wrap"><iframe src="https://www.youtube.com/embed/${ytId}?autoplay=0&rel=0&modestbranding=1" allowfullscreen></iframe></div>`
+                : `<div class="card-video-wrap"><div class="card-video-fallback"><i class="fas fa-video-slash" style="font-size:28px;"></i><span>Showcase Video Not Available</span></div></div>`;
+
+            let durationOptions = '';
+            let firstTierKey = '';
+            let firstPrice = 100;
+
+            if (p.plans && Object.keys(p.plans).length > 0) {
+                Object.entries(p.plans).forEach(([k, planData], idx) => {
+                    if (idx === 0) { firstTierKey = k; firstPrice = planData.price; }
+                    durationOptions += `<option value="${k}">${planData.label} - ₹${planData.price}</option>`;
+                });
+            } else {
+                durationOptions = `<option value="default">Standard Access - ₹100</option>`;
+                firstTierKey = 'default';
+            }
+
+            const panelStocks = allStocks[id] || {};
+            const tierStockCount = panelStocks[firstTierKey] ? Object.keys(panelStocks[firstTierKey]).length : 0;
+            const inStock = tierStockCount > 0;
+
+            container.innerHTML += `
+                <div class="product-card" id="card-${id}">
+                    ${videoHtml}
+                    <div class="card-body-content">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <h3 style="font-size:18px;font-weight:800;">${p.name}</h3>
+                            <span class="badge-stock ${inStock ? 'badge-in-stock' : 'badge-out-stock'}" id="stock-badge-${id}">
+                                ${inStock ? `<i class="fas fa-bolt"></i> ${tierStockCount} in Stock` : 'Out of Stock'}
+                            </span>
+                        </div>
+                        <p style="color:var(--text-sub);font-size:13px;">${p.description || 'Premium Quantum Tool'}</p>
+                        
+                        <div style="text-align:left;">
+                            <label style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;">Select Duration Tier:</label>
+                            <select class="custom-select" id="select-dur-${id}" onchange="onDurationChange('${id}')">
+                                ${durationOptions}
+                            </select>
+                        </div>
+
+                        <div style="font-size:22px;font-weight:900;color:var(--primary);" id="price-display-${id}">₹${firstPrice}</div>
+
+                        <button class="btn-cyber-primary" onclick="buyPanelWithWallet('${id}')">
+                            <i class="fas fa-wallet"></i> Buy from Wallet Balance
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    });
+
+    window.onDurationChange = async (panelId) => {
+        const select = document.getElementById(`select-dur-${panelId}`);
+        const tierKey = select.value;
+        const p = currentStorePanels[panelId];
+        if (!p || !p.plans) return;
+
+        const plan = p.plans[tierKey] || { price: 100, label: 'Access' };
+        document.getElementById(`price-display-${panelId}`).innerText = `₹${plan.price}`;
+
+        const stockSnap = await get(ref(db, `key_stocks/${panelId}/${tierKey}`));
+        const count = stockSnap.exists() ? Object.keys(stockSnap.val()).length : 0;
+        const badge = document.getElementById(`stock-badge-${panelId}`);
+        badge.className = `badge-stock ${count > 0 ? 'badge-in-stock' : 'badge-out-stock'}`;
+        badge.innerHTML = count > 0 ? `<i class="fas fa-bolt"></i> ${count} in Stock` : 'Out of Stock';
+    };
+
+    window.buyPanelWithWallet = async (panelId) => {
+        const p = currentStorePanels[panelId];
+        if (!p) return;
+
+        const select = document.getElementById(`select-dur-${panelId}`);
+        const tierKey = select ? select.value : 'default';
+        const plan = (p.plans && p.plans[tierKey]) ? p.plans[tierKey] : { price: 100, label: 'Access' };
+        const price = parseFloat(plan.price);
+
+        const stockSnap = await get(ref(db, `key_stocks/${panelId}/${tierKey}`));
+        if (!stockSnap.exists() || Object.keys(stockSnap.val()).length === 0) {
+            return alert("This duration tier is currently Out of Stock! Please check back soon.");
+        }
+
+        if (userBalance < price) {
+            alert(`Insufficient wallet balance! (Required: ₹${price}, Available: ₹${userBalance.toFixed(2)})
+Please deposit funds via UPI QR.`);
+            openDepositModal();
+            return;
+        }
+
+        if (!confirm(`Purchase ${p.name} (${plan.label}) for ₹${price} from your wallet balance?`)) return;
+
+        const balanceRef = ref(db, `users/${currentUser.uid}/balance`);
+        const result = await runTransaction(balanceRef, bal => {
+            if (bal >= price) return bal - price;
+            return undefined;
+        });
+
+        if (result.committed) {
+            const keysObj = stockSnap.val();
+            const firstKeyId = Object.keys(keysObj)[0];
+            const assignedKey = keysObj[firstKeyId];
+            await set(ref(db, `key_stocks/${panelId}/${tierKey}/${firstKeyId}`), null);
+
+            await push(ref(db, `purchases/${currentUser.uid}`), {
+                panelId,
+                panelName: p.name,
+                duration: plan.label,
+                price: price,
+                key: assignedKey,
+                downloadLink: p.link || '#',
+                date: new Date().toISOString()
+            });
+
+            await set(ref(db, 'global_feed'), {
+                user: currentUser.email ? currentUser.email.split('@')[0] : 'Jhony',
+                panel: p.name,
+                amount: price,
+                timestamp: serverTimestamp()
+            });
+
+            document.getElementById('disp-issued-key').innerText = assignedKey;
+            document.getElementById('btn-download-apk-modal').href = p.link || '#';
+            document.getElementById('btn-copy-key-modal').onclick = () => {
+                navigator.clipboard.writeText(assignedKey);
+                alert("License Key Copied!");
+            };
+            document.getElementById('modal-key-success').classList.remove('hidden');
+            if (window.confetti) confetti();
+
+            onDurationChange(panelId);
+            loadUserPurchases();
+        } else {
+            alert("Transaction failed! Insufficient funds.");
+        }
+    };
+
+    window.openDepositModal = () => {
+        document.getElementById('dep-utr-input').value = '';
+        document.getElementById('dep-file-label').innerText = 'Choose Screenshot Image';
+        uploadedScreenshotBase64 = '';
+        updateDepositQR();
+        document.getElementById('modal-deposit').classList.remove('hidden');
+    };
+
+    window.updateDepositQR = () => {
+        const amt = document.getElementById('dep-amount-input').value || 100;
+        document.getElementById('dep-vpa-display').innerText = paymentConfig.upi_id;
+        let qrSrc = '';
+        if (paymentConfig.qr_mode === 'static' && paymentConfig.qr_url) {
+            qrSrc = paymentConfig.qr_url;
+        } else {
+            const uri = `upi://pay?pa=${encodeURIComponent(paymentConfig.upi_id)}&pn=${encodeURIComponent(paymentConfig.merchant_name)}&am=${amt}&cu=INR`;
+            qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`;
+        }
+        document.getElementById('dep-qr-img').src = qrSrc;
+    };
+
+    document.getElementById('dep-screenshot-file').onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            uploadedScreenshotBase64 = evt.target.result;
+            document.getElementById('dep-file-label').innerText = 'Screenshot Attached ✔';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    document.getElementById('btn-submit-deposit').onclick = async () => {
+        const amt = parseFloat(document.getElementById('dep-amount-input').value);
+        const utr = document.getElementById('dep-utr-input').value.trim();
+
+        if (!amt || amt <= 0) return alert("Enter a valid deposit amount!");
+        if (!utr || utr.length < 6) return alert("Enter your 12-digit payment UTR number!");
+        if (!uploadedScreenshotBase64) return alert("Please upload your payment screenshot proof!");
+
+        await push(ref(db, 'deposits'), {
+            userId: currentUser ? currentUser.uid : 'Guest',
+            userEmail: currentUser && currentUser.email ? currentUser.email : 'Customer',
+            amount: amt,
+            utr,
+            screenshot: uploadedScreenshotBase64,
+            status: 'pending',
+            createdAt: serverTimestamp()
+        });
+
+        document.getElementById('modal-deposit').classList.add('hidden');
+        document.getElementById('modal-request-sent').classList.remove('hidden');
+    };
+
+    async function loadUserPurchases() {
+        if (!currentUser) return;
+        const snap = await get(ref(db, `purchases/${currentUser.uid}`));
+        const container = document.getElementById('user-purchases-container');
+        container.innerHTML = '';
+        if (!snap.exists()) {
+            container.innerHTML = '<p style="color:var(--text-sub);">No purchases found. Visit the Store to unlock tools.</p>';
+            return;
+        }
+
+        snap.forEach(c => {
+            const item = c.val();
+            container.innerHTML += `
+                <div class="purchase-card">
+                    <div>
+                        <strong style="font-size:16px;">${item.panelName}</strong>
+                        <div style="font-size:12px;color:var(--text-sub);">${item.duration || 'Access'} &bull; ${new Date(item.date).toLocaleDateString()}</div>
+                        <div class="mono" style="color:var(--green);font-weight:700;margin-top:4px;">Key: ${item.key}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn-cyber-primary" style="padding:8px 14px;font-size:12px;" onclick="navigator.clipboard.writeText('${item.key}');alert('Key Copied!');"><i class="fas fa-copy"></i> Copy</button>
+                        <a href="${item.downloadLink || '#'}" target="_blank" class="btn-cyber-primary" style="padding:8px 14px;font-size:12px;text-decoration:none;"><i class="fas fa-download"></i> Download APK</a>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    document.getElementById('btn-change-password').onclick = async () => {
+        const newPass = document.getElementById('new-password-input').value.trim();
+        if (!newPass || newPass.length < 6) return alert("Password must be at least 6 characters long!");
+        try {
+            await updatePassword(currentUser, newPass);
+            alert("Password updated successfully!");
+            document.getElementById('new-password-input').value = '';
+        } catch (e) {
+            alert("Error updating password: " + e.message);
+        }
+    };
+
+    async function renderLeaderboard() {
+        const [uSnap, pSnap] = await Promise.all([get(ref(db, 'users')), get(ref(db, 'purchases'))]);
+        const users = uSnap.val() || {};
+        const purchases = pSnap.val() || {};
+        const list = [];
+
+        for (const uid in users) {
+            const u = users[uid];
+            const userP = purchases[uid] ? Object.values(purchases[uid]) : [];
+            let total = 0;
+            userP.forEach(i => total += parseFloat(i.price || 0));
+            list.push({ email: u.email || 'Operative', total, count: userP.length });
+        }
+        list.sort((a, b) => b.total - a.total);
+
+        const podium = document.getElementById('user-podium-render');
+        podium.innerHTML = '';
+        list.slice(0, 3).forEach((item, idx) => {
+            const medal = idx === 0 ? '👑 #1' : (idx === 1 ? '🥈 #2' : '🥉 #3');
+            podium.innerHTML += `
+                <div class="podium-card ${idx === 0 ? 'rank-1' : ''}">
+                    <div style="font-size:24px;font-weight:900;">${medal}</div>
+                    <div style="font-size:15px;font-weight:800;margin:6px 0;">${item.email.split('@')[0]}</div>
+                    <div style="color:var(--primary);font-size:18px;font-weight:900;">₹${item.total.toFixed(2)}</div>
+                </div>
+            `;
+        });
+    }
+</script>
+</body>
+</html>
